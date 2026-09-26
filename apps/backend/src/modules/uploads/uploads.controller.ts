@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import * as fs from 'fs'
 import * as path from 'path'
 import { prisma } from '../../config/database'
+import { env } from '../../config/env'
 import { createError } from '../../common/middleware/error-handler'
 
 export class UploadsController {
@@ -128,7 +129,7 @@ export class UploadsController {
           data: {
             uploadId: upload.id,
             order: index,
-            urlWithWatermark: `${process.env.API_URL || 'http://localhost:3002'}/uploads/${filename}`,
+            urlWithWatermark: `${env.API_URL}/uploads/${filename}`,
           },
         })
       })
@@ -149,7 +150,7 @@ export class UploadsController {
       },
     })
 
-    const galleryUrl = `${process.env.FRONTEND_URL}/galeria/${token}`
+    const galleryUrl = `${env.FRONTEND_URL}/galeria/${token}`
 
     res.json({
       success: true,
