@@ -1,0 +1,9 @@
+{
+  "extends": "./apps/backend/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "./apps/backend/src",
+    "paths": {
+      "@/*": ["./*"]
+    }
+  }
+}
