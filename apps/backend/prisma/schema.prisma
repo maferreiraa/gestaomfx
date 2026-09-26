@@ -1,0 +1,259 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// AUTH & ADMIN
+// ============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  clients           Client[]
+  watermarkConfig   WatermarkConfig?
+  pixConfig         PixConfig?
+  priceDefaults     PriceDefaults?
+
+  @@map("users")
+}
+
+// ============================================================================
+// CLIENTES
+// ============================================================================
+
+model Client {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name      String
+  phone     String
+  adId      String?   // ID do anúncio (Meta Ads)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  uploads       Upload[]
+  selections    PhotoSelection[]
+  payments      Payment[]
+  galleryLinks  GalleryLink[]
+
+  @@unique([userId, phone])
+  @@index([userId])
+  @@index([adId])
+  @@index([createdAt])
+  @@map("clients")
+}
+
+// ============================================================================
+// UPLOADS DE FOTOS
+// ============================================================================
+
+model Upload {
+  id            String    @id @default(cuid())
+  clientId      String
+  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  uploadedAt    DateTime  @default(now())
+  priceConfig   PriceConfig @relation(fields: [priceConfigId], references: [id], onDelete: Cascade)
+  priceConfigId String
+
+  photos        Photo[]
+  selections    PhotoSelection[]
+  galleryLink   GalleryLink?
+
+  @@index([clientId])
+  @@index([uploadedAt])
+  @@map("uploads")
+}
+
+// ============================================================================
+// FOTOS INDIVIDUAIS
+// ============================================================================
+
+model Photo {
+  id                  String    @id @default(cuid())
+  uploadId            String
+  upload              Upload    @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  order               Int
+  urlWithWatermark    String    // S3 URL com marca d'água
+  urlWithoutWatermark String?   // S3 URL sem marca d'água (gerada após pagamento)
+
+  selections          PhotoSelection[]
+
+  @@unique([uploadId, order])
+  @@index([uploadId])
+  @@map("photos")
+}
+
+// ============================================================================
+// SELEÇÕES DE FOTOS (Carrinho)
+// ============================================================================
+
+model PhotoSelection {
+  id        String    @id @default(cuid())
+  clientId  String
+  client    Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  uploadId  String
+  upload    Upload    @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  photoId   String
+  photo     Photo     @relation(fields: [photoId], references: [id], onDelete: Cascade)
+
+  selectedAt DateTime @default(now())
+
+  payment   Payment?   @relation(fields: [paymentId], references: [id])
+  paymentId String?
+
+  @@unique([clientId, uploadId, photoId])
+  @@index([clientId])
+  @@index([paymentId])
+  @@map("photo_selections")
+}
+
+// ============================================================================
+// PAGAMENTOS
+// ============================================================================
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  EXPIRED
+}
+
+model Payment {
+  id          String    @id @default(cuid())
+  clientId    String
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  uploadId    String
+
+  amount      Decimal   @db.Decimal(10, 2)
+  currency    String    @default("BRL")
+  status      PaymentStatus @default(PENDING)
+
+  pixQrCode   String?   // QR code gerado
+  pixCopyPaste String?  // Chave para copiar e colar
+
+  selections  PhotoSelection[]
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+  expiresAt   DateTime  // PIX expira em 30 minutos
+
+  @@index([clientId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+// ============================================================================
+// LINKS DA GALERIA
+// ============================================================================
+
+model GalleryLink {
+  id          String    @id @default(cuid())
+  clientId    String
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  uploadId    String    @unique
+  upload      Upload    @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  token       String    @unique // Token aleatório (64 chars)
+  expiresAt   DateTime  // Válido por 7 dias
+  createdAt   DateTime  @default(now())
+
+  accessCount Int       @default(0)
+  lastAccessedAt DateTime?
+
+  @@index([token])
+  @@index([clientId])
+  @@index([expiresAt])
+  @@map("gallery_links")
+}
+
+// ============================================================================
+// CONFIGURAÇÕES DE PREÇOS
+// ============================================================================
+
+model PriceConfig {
+  id              String    @id @default(cuid())
+  uploadId        String
+  upload          Upload    @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  price1Photo     Decimal   @db.Decimal(10, 2)
+  price3Photos    Decimal   @db.Decimal(10, 2)
+  price10Photos   Decimal   @db.Decimal(10, 2)
+  pricePerExtra   Decimal   @db.Decimal(10, 2) @default(3.50)
+
+  @@index([uploadId])
+  @@map("price_configs")
+}
+
+model PriceDefaults {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  price1Photo     Decimal   @db.Decimal(10, 2) @default(25.00)
+  price3Photos    Decimal   @db.Decimal(10, 2) @default(60.00)
+  price10Photos   Decimal   @db.Decimal(10, 2) @default(150.00)
+  pricePerExtra   Decimal   @db.Decimal(10, 2) @default(3.50)
+
+  updatedAt       DateTime  @updatedAt
+
+  @@map("price_defaults")
+}
+
+// ============================================================================
+// CONFIGURAÇÕES DO ADMIN
+// ============================================================================
+
+model WatermarkConfig {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  text            String    @default("mfxcreativee")
+  opacity         Float     @default(0.5) // 0.0 - 1.0
+  fontSize        Int       @default(48)
+  fontFamily      String    @default("Arial")
+  color           String    @default("#FFFFFF")
+  repeatMode      String    @default("diagonal") // diagonal, scattered, single
+
+  enabled         Boolean   @default(true)
+  updatedAt       DateTime  @updatedAt
+
+  @@map("watermark_configs")
+}
+
+model PixConfig {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  key             String    // CPF, Email, Telefone ou Aleatória
+  keyType         String    // CPF, EMAIL, PHONE, RANDOM
+  bankName        String    // Ex: Banco do Brasil, Bradesco
+  bankCode        String    // Ex: 001, 237
+  accountHolder   String
+
+  updatedAt       DateTime  @updatedAt
+
+  @@map("pix_configs")
+}
