@@ -3,7 +3,10 @@
   "builds": [
     {
       "src": "apps/frontend/package.json",
-      "use": "@vercel/next"
+      "use": "@vercel/next",
+      "config": {
+        "workspaceRoot": "."
+      }
     }
   ]
 }
