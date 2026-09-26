@@ -1,5 +1,5 @@
-import { prisma } from '@/config/database'
-import { createError } from '@/common/middleware/error-handler'
+import { prisma } from '../../config/database'
+import { createError } from '../../common/middleware/error-handler'
 import { generateAccessToken, generateRefreshToken, verifyToken } from './jwt.util'
 import { hashPassword, comparePasswords } from './password.util'
 

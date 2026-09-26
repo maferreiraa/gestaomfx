@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { verifyToken } from './jwt.util'
-import { createError } from '@/common/middleware/error-handler'
+import { createError } from '../../common/middleware/error-handler'
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   try {

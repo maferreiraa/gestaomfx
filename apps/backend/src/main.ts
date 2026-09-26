@@ -1,12 +1,11 @@
-import 'tsconfig-paths/register'
 import 'express-async-errors'
 import express from 'express'
 import cors from 'cors'
-import { env } from '@/config/env'
-import { prisma } from '@/config/database'
-import { errorHandler } from '@/common/middleware/error-handler'
-import { authRoutes } from '@/modules/auth/auth.routes'
-import { clientRoutes } from '@/modules/clients/clients.routes'
+import { env } from './config/env'
+import { prisma } from './config/database'
+import { errorHandler } from './common/middleware/error-handler'
+import { authRoutes } from './modules/auth/auth.routes'
+import { clientRoutes } from './modules/clients/clients.routes'
 
 const app = express()
 

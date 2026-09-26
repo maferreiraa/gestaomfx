@@ -1,4 +1,4 @@
-import { prisma } from '@/config/database'
+import { prisma } from '../../config/database'
 import { CreateClientDto, UpdateClientDto } from './dtos/create-client.dto'
 import { Client } from '@prisma/client'
 

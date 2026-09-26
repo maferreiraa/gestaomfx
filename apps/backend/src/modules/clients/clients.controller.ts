@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import { clientsService } from './clients.service'
-import { createError } from '@/common/middleware/error-handler'
+import { createError } from '../../common/middleware/error-handler'
 import {
   createClientSchema,
   updateClientSchema,

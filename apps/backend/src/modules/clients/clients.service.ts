@@ -1,6 +1,6 @@
 import { clientsRepository } from './clients.repository'
 import { CreateClientDto, UpdateClientDto } from './dtos/create-client.dto'
-import { createError } from '@/common/middleware/error-handler'
+import { createError } from '../../common/middleware/error-handler'
 
 export class ClientsService {
   async create(userId: string, data: CreateClientDto) {

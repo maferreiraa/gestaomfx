@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import Joi from 'joi'
 import { authService } from './auth.service'
-import { createError } from '@/common/middleware/error-handler'
+import { createError } from '../../common/middleware/error-handler'
 
 const loginSchema = Joi.object({
   email: Joi.string().email().required(),
