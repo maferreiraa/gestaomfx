@@ -67,11 +67,11 @@ model Upload {
   client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   uploadedAt    DateTime  @default(now())
-  priceConfig   PriceConfig?
+  priceConfig   PriceConfig?   @relation("UploadPriceConfig")
+  galleryLink   GalleryLink?   @relation("UploadGalleryLink")
 
   photos        Photo[]
   selections    PhotoSelection[]
-  galleryLink   GalleryLink?
 
   @@index([clientId])
   @@index([uploadedAt])
@@ -171,7 +171,7 @@ model GalleryLink {
   client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   uploadId    String    @unique
-  upload      Upload    @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  upload      Upload    @relation("UploadGalleryLink", fields: [uploadId], references: [id], onDelete: Cascade)
 
   token       String    @unique // Token aleatório (64 chars)
   expiresAt   DateTime  // Válido por 7 dias
@@ -193,7 +193,7 @@ model GalleryLink {
 model PriceConfig {
   id              String    @id @default(cuid())
   uploadId        String    @unique
-  upload          Upload    @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  upload          Upload    @relation("UploadPriceConfig", fields: [uploadId], references: [id], onDelete: Cascade)
 
   price1Photo     Decimal   @db.Decimal(10, 2)
   price3Photos    Decimal   @db.Decimal(10, 2)
