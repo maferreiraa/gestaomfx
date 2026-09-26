@@ -27,8 +27,8 @@ async function main() {
       data: {
         userId: admin.id,
         text: 'mfxcreativee',
-        opacity: 0.5,
-        fontSize: 48,
+        opacity: 0.25,
+        fontSize: 60,
         fontFamily: 'Arial',
         color: '#FFFFFF',
         repeatMode: 'diagonal',
@@ -36,34 +36,34 @@ async function main() {
       },
     })
 
-    console.log('✅ Created default watermark config')
+    console.log('✅ Created watermark config (10% size, 25% opacity)')
 
     // Create default PIX config
     await prisma.pixConfig.create({
       data: {
         userId: admin.id,
-        key: 'your-pix-key-here',
+        key: 'mfxcreativee@gmail.com',
         keyType: 'EMAIL',
-        bankName: 'Seu Banco',
-        bankCode: '001',
-        accountHolder: 'MFX Creative',
+        bankName: 'Mercado Pago',
+        bankCode: 'MP',
+        accountHolder: 'Marina Ferreira Andrade',
       },
     })
 
-    console.log('✅ Created default PIX config')
+    console.log('✅ Created PIX config (Marina Ferreira Andrade)')
 
     // Create default price config
     await prisma.priceDefaults.create({
       data: {
         userId: admin.id,
-        price1Photo: 25.0,
-        price3Photos: 60.0,
-        price10Photos: 150.0,
-        pricePerExtra: 3.5,
+        price1Photo: 14.90,
+        price3Photos: 24.90,
+        price10Photos: 35.00,
+        pricePerExtra: 3.50,
       },
     })
 
-    console.log('✅ Created default price config')
+    console.log('✅ Created price config (1: R$14,90 | 3: R$24,90 | 10: R$35,00 | Extra: R$3,50)')
   } else {
     console.log('⏭️  Admin user already exists, skipping...')
   }
