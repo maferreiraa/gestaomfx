@@ -38,7 +38,6 @@ export default function SettingsPage() {
   const [pix, setPix] = useState<PixConfig | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -118,12 +117,6 @@ export default function SettingsPage() {
           {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
               {error}
-            </div>
-          )}
-
-          {successMessage && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-600">
-              {successMessage}
             </div>
           )}
 
