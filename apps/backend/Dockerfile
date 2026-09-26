@@ -2,6 +2,9 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Clear npm cache
+RUN npm cache clean --force
+
 # Copy root package files
 COPY package*.json ./
 
