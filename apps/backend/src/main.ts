@@ -1,6 +1,7 @@
 import 'express-async-errors'
 import express from 'express'
 import cors from 'cors'
+import multer from 'multer'
 import { env } from './config/env'
 import { prisma } from './config/database'
 import { errorHandler } from './common/middleware/error-handler'
@@ -14,6 +15,9 @@ const app = express()
 // Middleware
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.use(multer({ storage: multer.memoryStorage() }).array('photos', 40))
+app.use('/uploads', express.static('uploads'))
+
 const allowedOrigins = [
   env.FRONTEND_URL,
   'http://localhost:3000',

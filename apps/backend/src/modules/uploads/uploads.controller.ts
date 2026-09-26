@@ -1,4 +1,6 @@
 import { Request, Response } from 'express'
+import * as fs from 'fs'
+import * as path from 'path'
 import { prisma } from '../../config/database'
 import { createError } from '../../common/middleware/error-handler'
 
@@ -72,6 +74,7 @@ export class UploadsController {
   async createUpload(req: Request, res: Response): Promise<void> {
     const userId = req.userId
     const { clientId } = req.body
+    const files = req.files as Express.Multer.File[] | undefined
 
     if (!userId) {
       throw createError('Unauthorized', 401)
@@ -79,6 +82,14 @@ export class UploadsController {
 
     if (!clientId) {
       throw createError('Client ID is required', 400)
+    }
+
+    if (!files || files.length === 0) {
+      throw createError('At least one photo is required', 400)
+    }
+
+    if (files.length > 40) {
+      throw createError('Maximum 40 photos allowed', 400)
     }
 
     // Verificar se cliente pertence ao usuário
@@ -90,12 +101,38 @@ export class UploadsController {
       throw createError('Client not found', 404)
     }
 
+    // Criar diretório para uploads se não existir
+    const uploadDir = path.join(process.cwd(), 'uploads')
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true })
+    }
+
     // Criar upload
     const upload = await prisma.upload.create({
       data: {
         clientId,
       },
     })
+
+    // Salvar fotos e criar registros no banco
+    const photos = await Promise.all(
+      files.map(async (file, index) => {
+        const filename = `${upload.id}-${index}-${Date.now()}.jpg`
+        const filepath = path.join(uploadDir, filename)
+
+        // Salvar arquivo
+        fs.writeFileSync(filepath, file.buffer)
+
+        // Criar registro de foto (sem marca d'água por enquanto)
+        return await prisma.photo.create({
+          data: {
+            uploadId: upload.id,
+            order: index,
+            urlWithWatermark: `${process.env.API_URL || 'http://localhost:3002'}/uploads/${filename}`,
+          },
+        })
+      })
+    )
 
     // Gerar token de galeria (64 caracteres)
     const token = require('crypto')
@@ -118,6 +155,7 @@ export class UploadsController {
       success: true,
       data: {
         uploadId: upload.id,
+        photoCount: photos.length,
         galleryUrl,
       },
     })
