@@ -1,0 +1,7 @@
+apps/backend
+docs
+.github
+docker-compose.yml
+Procfile
+railway.json
+CLAUDE.md
