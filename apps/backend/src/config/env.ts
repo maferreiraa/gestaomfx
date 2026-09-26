@@ -8,8 +8,8 @@ export const env = {
 
   // JWT
   JWT_SECRET: process.env.JWT_SECRET || 'development-secret-key',
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '1h',
-  JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+  JWT_EXPIRES_IN: (process.env.JWT_EXPIRES_IN as string) || '1h',
+  JWT_REFRESH_EXPIRES_IN: (process.env.JWT_REFRESH_EXPIRES_IN as string) || '7d',
 
   // Server
   PORT: parseInt(process.env.PORT || '3002', 10),

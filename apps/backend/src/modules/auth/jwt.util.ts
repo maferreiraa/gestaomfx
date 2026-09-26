@@ -9,19 +9,13 @@ export interface JwtPayload {
 }
 
 export const generateAccessToken = (userId: string, email: string): string => {
-  return jwt.sign(
-    { userId, email },
-    env.JWT_SECRET,
-    { expiresIn: env.JWT_EXPIRES_IN } as any
-  )
+  const options: { expiresIn: string } = { expiresIn: env.JWT_EXPIRES_IN }
+  return jwt.sign({ userId, email }, env.JWT_SECRET, options as any)
 }
 
 export const generateRefreshToken = (userId: string, email: string): string => {
-  return jwt.sign(
-    { userId, email },
-    env.JWT_SECRET,
-    { expiresIn: env.JWT_REFRESH_EXPIRES_IN } as any
-  )
+  const options: { expiresIn: string } = { expiresIn: env.JWT_REFRESH_EXPIRES_IN }
+  return jwt.sign({ userId, email }, env.JWT_SECRET, options as any)
 }
 
 export const verifyToken = (token: string): JwtPayload => {
