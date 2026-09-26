@@ -9,7 +9,7 @@ const loginSchema = Joi.object({
 })
 
 export class AuthController {
-  async login(req: Request, res: Response) {
+  async login(req: Request, res: Response): Promise<void> {
     const { error, value } = loginSchema.validate(req.body)
 
     if (error) {
@@ -24,7 +24,7 @@ export class AuthController {
     })
   }
 
-  async refresh(req: Request, res: Response) {
+  async refresh(req: Request, res: Response): Promise<void> {
     const { refreshToken } = req.body
 
     if (!refreshToken) {
@@ -39,7 +39,7 @@ export class AuthController {
     })
   }
 
-  async getMe(req: Request, res: Response) {
+  async getMe(req: Request, res: Response): Promise<void> {
     if (!req.userId) {
       throw createError('Unauthorized', 401)
     }
@@ -52,7 +52,7 @@ export class AuthController {
     })
   }
 
-  logout(req: Request, res: Response) {
+  logout(req: Request, res: Response): void {
     res.json({
       success: true,
       message: 'Logged out successfully',

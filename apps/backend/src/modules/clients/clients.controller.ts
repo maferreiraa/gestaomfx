@@ -7,7 +7,7 @@ import {
 } from './dtos/create-client.dto'
 
 export class ClientsController {
-  async create(req: Request, res: Response) {
+  async create(req: Request, res: Response): Promise<void> {
     if (!req.userId) {
       throw createError('Unauthorized', 401)
     }
@@ -25,7 +25,7 @@ export class ClientsController {
     })
   }
 
-  async getById(req: Request, res: Response) {
+  async getById(req: Request, res: Response): Promise<void> {
     if (!req.userId) {
       throw createError('Unauthorized', 401)
     }
@@ -38,7 +38,7 @@ export class ClientsController {
     })
   }
 
-  async getAll(req: Request, res: Response) {
+  async getAll(req: Request, res: Response): Promise<void> {
     if (!req.userId) {
       throw createError('Unauthorized', 401)
     }
@@ -54,7 +54,7 @@ export class ClientsController {
     })
   }
 
-  async update(req: Request, res: Response) {
+  async update(req: Request, res: Response): Promise<void> {
     if (!req.userId) {
       throw createError('Unauthorized', 401)
     }
@@ -72,7 +72,7 @@ export class ClientsController {
     })
   }
 
-  async delete(req: Request, res: Response) {
+  async delete(req: Request, res: Response): Promise<void> {
     if (!req.userId) {
       throw createError('Unauthorized', 401)
     }
