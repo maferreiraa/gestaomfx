@@ -81,9 +81,12 @@ export default function UploadsPage() {
               <h1 className="text-3xl font-bold text-mfx-dark mb-2">📸 Uploads de Fotos</h1>
               <div className="h-1 w-32 bg-gradient-to-r from-mfx-orange to-mfx-coral"></div>
             </div>
-            <button className="bg-mfx-orange hover:bg-mfx-coral text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+            <Link
+              href="/dashboard/uploads/new"
+              className="bg-mfx-orange hover:bg-mfx-coral text-white px-6 py-2 rounded-lg font-semibold transition-colors inline-block"
+            >
               + Novo Upload
-            </button>
+            </Link>
           </div>
 
           {error && (
@@ -99,9 +102,12 @@ export default function UploadsPage() {
           ) : uploads.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-500 mb-4">Nenhum upload realizado</p>
-              <button className="text-mfx-orange hover:text-mfx-coral font-semibold">
+              <Link
+                href="/dashboard/uploads/new"
+                className="text-mfx-orange hover:text-mfx-coral font-semibold"
+              >
                 Fazer primeiro upload →
-              </button>
+              </Link>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
