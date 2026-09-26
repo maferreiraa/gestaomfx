@@ -1,7 +1,0 @@
-{
-  "version": 2,
-  "buildCommand": "npm --prefix ./apps/frontend build",
-  "outputDirectory": "./apps/frontend/.next",
-  "installCommand": "npm install",
-  "devCommand": "npm --prefix ./apps/frontend run dev"
-}
