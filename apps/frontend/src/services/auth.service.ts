@@ -24,22 +24,22 @@ export interface AuthResponse {
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const { data } = await api.post<AuthResponse>('/auth/login', credentials)
-    return data
+    const response = await api.post<{ success: boolean; data: AuthResponse }>('/auth/login', credentials)
+    return response.data.data
   },
 
   async refresh(refreshToken: string): Promise<AuthResponse> {
-    const { data } = await api.post<AuthResponse>('/auth/refresh', {
+    const response = await api.post<{ success: boolean; data: AuthResponse }>('/auth/refresh', {
       refreshToken,
     })
-    return data
+    return response.data.data
   },
 
   async getMe(token: string) {
-    const { data } = await api.get('/auth/me', {
+    const response = await api.get<{ success: boolean; data: any }>('/auth/me', {
       headers: { Authorization: `Bearer ${token}` },
     })
-    return data
+    return response.data.data
   },
 }
 
