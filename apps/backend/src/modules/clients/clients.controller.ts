@@ -61,7 +61,7 @@ export class ClientsController {
         phone: true,
         createdAt: true,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { name: 'asc' },
     })
 
     console.log('✅ Found clients:', clients.length)

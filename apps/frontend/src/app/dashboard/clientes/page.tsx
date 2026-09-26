@@ -16,8 +16,24 @@ export default function ClientesPage() {
   const router = useRouter()
   const { isAuthenticated, logout } = useAuthStore()
   const [clients, setClients] = useState<Client[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+
+  const filteredClients = clients.filter((client) => {
+    const query = searchQuery.toLowerCase().trim()
+    if (!query) return true
+
+    // Busca por nome
+    if (client.name.toLowerCase().includes(query)) return true
+
+    // Busca por telefone (remove espaços/caracteres especiais para comparação)
+    const phoneDigits = client.phone.replace(/\D/g, '')
+    const queryDigits = query.replace(/\D/g, '')
+    if (phoneDigits.includes(queryDigits)) return true
+
+    return false
+  })
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -95,6 +111,19 @@ export default function ClientesPage() {
             </div>
           )}
 
+          {/* Campo de Busca */}
+          {!isLoading && clients.length > 0 && (
+            <div className="mb-6">
+              <input
+                type="text"
+                placeholder="🔍 Buscar por nome ou telefone..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mfx-orange focus:border-transparent outline-none transition"
+              />
+            </div>
+          )}
+
           {isLoading ? (
             <div className="text-center py-12">
               <p className="text-gray-500">Carregando clientes...</p>
@@ -109,6 +138,10 @@ export default function ClientesPage() {
                 Cadastrar primeiro cliente →
               </Link>
             </div>
+          ) : filteredClients.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500">Nenhum cliente encontrado para "{searchQuery}"</p>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -121,7 +154,7 @@ export default function ClientesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {clients.map((client) => (
+                  {filteredClients.map((client) => (
                     <tr key={client.id} className="border-b border-gray-200 hover:bg-gray-50">
                       <td className="py-3 px-4 text-gray-800">{client.name}</td>
                       <td className="py-3 px-4 text-gray-600">{client.phone}</td>
