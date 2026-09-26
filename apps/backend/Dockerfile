@@ -15,7 +15,7 @@ RUN npm install
 RUN cd apps/backend && npm run build
 
 # Remove devDependencies for production
-RUN npm prune --omit=dev
+RUN npm install --omit=dev
 
 # Expose port
 EXPOSE 3002
