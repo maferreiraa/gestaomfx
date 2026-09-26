@@ -8,14 +8,14 @@ COPY package*.json ./
 # Copy backend files
 COPY apps/backend ./apps/backend
 
-# Install dependencies
-RUN npm ci --omit=dev
-
-# Generate Prisma
-RUN cd apps/backend && npx prisma generate
+# Install ALL dependencies (including devDependencies needed for build)
+RUN npm ci
 
 # Build TypeScript
 RUN cd apps/backend && npm run build
+
+# Remove devDependencies for production
+RUN npm ci --omit=dev
 
 # Expose port
 EXPOSE 3002
