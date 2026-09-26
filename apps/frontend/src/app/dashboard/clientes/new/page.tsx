@@ -76,7 +76,7 @@ export default function NewClientPage() {
         throw new Error(errorData.message || 'Erro ao criar cliente')
       }
 
-      const data = await response.json()
+      await response.json()
       setSuccess('Cliente criado com sucesso!')
       setFormData({ name: '', phone: '', adId: '' })
 
