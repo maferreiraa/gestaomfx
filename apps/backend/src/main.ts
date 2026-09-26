@@ -6,6 +6,8 @@ import { prisma } from './config/database'
 import { errorHandler } from './common/middleware/error-handler'
 import { authRoutes } from './modules/auth/auth.routes'
 import { clientRoutes } from './modules/clients/clients.routes'
+import { uploadRoutes } from './modules/uploads/uploads.routes'
+import { settingsRoutes } from './modules/settings/settings.routes'
 
 const app = express()
 
@@ -41,6 +43,8 @@ app.get('/health', (req, res) => {
 // Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/admin/clients', clientRoutes)
+app.use('/api/admin/uploads', uploadRoutes)
+app.use('/api/settings', settingsRoutes)
 
 // Error handling
 app.use(errorHandler)
