@@ -1,8 +1,49 @@
 import { Request, Response } from 'express'
 import { prisma } from '../../config/database'
 import { createError } from '../../common/middleware/error-handler'
+import { CreateClientDto, createClientSchema } from './dtos/create-client.dto'
 
 export class ClientsController {
+  async createClient(req: Request, res: Response): Promise<void> {
+    const userId = req.userId
+    const { error, value } = createClientSchema.validate(req.body)
+
+    if (error) {
+      throw createError(error.message, 400)
+    }
+
+    if (!userId) {
+      throw createError('Unauthorized', 401)
+    }
+
+    const dto: CreateClientDto = value
+
+    const existingClient = await prisma.client.findFirst({
+      where: {
+        userId,
+        phone: dto.phone,
+      },
+    })
+
+    if (existingClient) {
+      throw createError('Client with this phone already exists', 409)
+    }
+
+    const client = await prisma.client.create({
+      data: {
+        userId,
+        name: dto.name,
+        phone: dto.phone,
+        adId: dto.adId,
+      },
+    })
+
+    res.status(201).json({
+      success: true,
+      data: client,
+    })
+  }
+
   async listClients(req: Request, res: Response): Promise<void> {
     const userId = req.userId
 

@@ -7,4 +7,5 @@ export const clientRoutes = Router()
 clientRoutes.use(authMiddleware)
 
 clientRoutes.get('/', (req, res) => clientsController.listClients(req, res))
+clientRoutes.post('/', (req, res) => clientsController.createClient(req, res))
 clientRoutes.get('/:clientId', (req, res) => clientsController.getClient(req, res))

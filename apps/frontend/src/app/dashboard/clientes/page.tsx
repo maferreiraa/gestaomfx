@@ -78,12 +78,15 @@ export default function ClientesPage() {
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-mfx-dark mb-2">Clientes</h1>
+              <h1 className="text-3xl font-bold text-mfx-dark mb-2">👥 Clientes</h1>
               <div className="h-1 w-32 bg-gradient-to-r from-mfx-orange to-mfx-coral"></div>
             </div>
-            <button className="bg-mfx-orange hover:bg-mfx-coral text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+            <Link
+              href="/dashboard/clientes/new"
+              className="bg-mfx-orange hover:bg-mfx-coral text-white px-6 py-2 rounded-lg font-semibold transition-colors inline-block"
+            >
               + Novo Cliente
-            </button>
+            </Link>
           </div>
 
           {error && (
@@ -99,9 +102,12 @@ export default function ClientesPage() {
           ) : clients.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-500 mb-4">Nenhum cliente cadastrado</p>
-              <button className="text-mfx-orange hover:text-mfx-coral font-semibold">
+              <Link
+                href="/dashboard/clientes/new"
+                className="text-mfx-orange hover:text-mfx-coral font-semibold"
+              >
                 Cadastrar primeiro cliente →
-              </button>
+              </Link>
             </div>
           ) : (
             <div className="overflow-x-auto">
