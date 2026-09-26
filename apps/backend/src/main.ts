@@ -16,10 +16,14 @@ const allowedOrigins = [
   env.FRONTEND_URL,
   'http://localhost:3000',
   'http://localhost:3001',
+  'https://gestaomfx.vercel.app',
 ]
+
+console.log('🔐 CORS Configuration:', { FRONTEND_URL: env.FRONTEND_URL, allowedOrigins })
 
 app.use(cors({
   origin: (origin, callback) => {
+    console.log('📍 CORS request from origin:', origin)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true)
     } else {
