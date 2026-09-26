@@ -67,8 +67,7 @@ model Upload {
   client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   uploadedAt    DateTime  @default(now())
-  priceConfig   PriceConfig @relation(fields: [priceConfigId], references: [id], onDelete: Cascade)
-  priceConfigId String
+  priceConfig   PriceConfig?
 
   photos        Photo[]
   selections    PhotoSelection[]
@@ -193,7 +192,7 @@ model GalleryLink {
 
 model PriceConfig {
   id              String    @id @default(cuid())
-  uploadId        String
+  uploadId        String    @unique
   upload          Upload    @relation(fields: [uploadId], references: [id], onDelete: Cascade)
 
   price1Photo     Decimal   @db.Decimal(10, 2)
