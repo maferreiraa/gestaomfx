@@ -5,17 +5,17 @@ async function main() {
   console.log('🌱 Seeding database...')
 
   // Create default admin user
-  const adminEmail = 'admin@gestaomfx.com'
+  const adminEmail = 'maferreiraa@hotmail.com'
   const existingAdmin = await prisma.user.findUnique({
     where: { email: adminEmail },
   })
 
   if (!existingAdmin) {
-    const hashedPassword = await hashPassword('admin123456')
+    const hashedPassword = await hashPassword('m32364023')
     const admin = await prisma.user.create({
       data: {
         email: adminEmail,
-        name: 'Administrador',
+        name: 'MFX Creative',
         passwordHash: hashedPassword,
       },
     })
