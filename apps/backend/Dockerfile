@@ -2,9 +2,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy root package files and tsconfig
+# Copy root package files
 COPY package*.json ./
-COPY tsconfig.json ./
 
 # Copy backend files
 COPY apps/backend ./apps/backend
