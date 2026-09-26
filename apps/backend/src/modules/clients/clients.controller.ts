@@ -5,7 +5,9 @@ import { createError } from '../../common/middleware/error-handler'
 export class ClientsController {
   async listClients(req: Request, res: Response): Promise<void> {
     const userId = req.userId
-    
+
+    console.log('📍 listClients called with userId:', userId)
+
     if (!userId) {
       throw createError('Unauthorized', 401)
     }
@@ -20,6 +22,8 @@ export class ClientsController {
       },
       orderBy: { createdAt: 'desc' },
     })
+
+    console.log('✅ Found clients:', clients.length)
 
     res.json({
       success: true,
