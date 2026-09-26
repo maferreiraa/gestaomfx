@@ -1,12 +1,7 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "apps/frontend/package.json",
-      "use": "@vercel/next",
-      "config": {
-        "workspaceRoot": "."
-      }
-    }
-  ]
+  "buildCommand": "npm --prefix ./apps/frontend build",
+  "outputDirectory": "./apps/frontend/.next",
+  "installCommand": "npm install",
+  "devCommand": "npm --prefix ./apps/frontend run dev"
 }
