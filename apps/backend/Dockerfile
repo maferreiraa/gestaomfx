@@ -2,9 +2,6 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Clear npm cache
-RUN npm cache clean --force
-
 # Copy root package files
 COPY package*.json ./
 
@@ -12,13 +9,13 @@ COPY package*.json ./
 COPY apps/backend ./apps/backend
 
 # Install ALL dependencies (including devDependencies needed for build)
-RUN npm ci
+RUN npm install
 
 # Build TypeScript
 RUN cd apps/backend && npm run build
 
 # Remove devDependencies for production
-RUN npm ci --omit=dev
+RUN npm prune --omit=dev
 
 # Expose port
 EXPOSE 3002
