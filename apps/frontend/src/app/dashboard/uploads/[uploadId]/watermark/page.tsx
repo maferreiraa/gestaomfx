@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuthStore } from '@/store/auth.store'
 import Link from 'next/link'
@@ -52,7 +53,7 @@ export default function ConfigureWatermarkPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
+  const canvasRef = React.useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -62,6 +63,61 @@ export default function ConfigureWatermarkPage() {
 
     fetchData()
   }, [isAuthenticated, router])
+
+  useEffect(() => {
+    drawWatermarkPreview()
+  }, [watermark])
+
+  const drawWatermarkPreview = () => {
+    if (!canvasRef.current) return
+
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    canvas.width = 500
+    canvas.height = 400
+
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    ctx.save()
+    ctx.globalAlpha = watermark.opacity
+    ctx.fillStyle = watermark.color
+    ctx.font = `bold ${watermark.fontSize}px ${watermark.fontFamily}`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+
+    if (watermark.repeatMode === 'single') {
+      ctx.fillText(watermark.text, canvas.width / 2, canvas.height / 2)
+    } else if (watermark.repeatMode === 'diagonal') {
+      ctx.save()
+      ctx.rotate((Math.PI / 180) * 45)
+      const spacing = watermark.fontSize * 3
+      for (let y = -canvas.height * 2; y < canvas.height * 2; y += spacing) {
+        for (let x = -canvas.width * 2; x < canvas.width * 2; x += spacing) {
+          ctx.fillText(watermark.text, x, y)
+        }
+      }
+      ctx.restore()
+    } else if (watermark.repeatMode === 'scattered') {
+      const cols = Math.ceil(canvas.width / (watermark.fontSize * 3))
+      const rows = Math.ceil(canvas.height / (watermark.fontSize * 2))
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const x =
+            col * watermark.fontSize * 3 +
+            Math.random() * watermark.fontSize
+          const y =
+            row * watermark.fontSize * 2 +
+            Math.random() * watermark.fontSize
+          ctx.fillText(watermark.text, x, y)
+        }
+      }
+    }
+
+    ctx.restore()
+  }
 
   const fetchData = async () => {
     try {
@@ -77,7 +133,6 @@ export default function ConfigureWatermarkPage() {
 
       const uploadData = await uploadRes.json()
       setUpload(uploadData.data)
-      setPreviewPhoto(uploadData.data.photos[0]?.urlWithWatermark || null)
 
       // Fetch client info
       const clientRes = await fetch(
@@ -204,29 +259,18 @@ export default function ConfigureWatermarkPage() {
               {/* Preview */}
               <div>
                 <h2 className="text-lg font-semibold text-gray-800 mb-4">Preview</h2>
-                <div className="bg-gray-100 rounded-lg overflow-hidden h-96 flex items-center justify-center relative">
-                  {previewPhoto ? (
-                    <img
-                      src={previewPhoto}
-                      alt="Preview"
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        console.error('Failed to load preview:', previewPhoto)
-                        e.currentTarget.style.display = 'none'
-                      }}
-                    />
-                  ) : (
-                    <p className="text-gray-500">Nenhuma foto para preview</p>
-                  )}
+                <div className="bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center relative p-4">
+                  <canvas
+                    ref={canvasRef}
+                    className="max-w-full h-auto border border-gray-300 rounded"
+                  />
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
-                  Total de fotos: {upload?.photos.length || 0}
+                  Visualização em tempo real (500x400px)
                 </p>
-                {previewPhoto && (
-                  <p className="text-xs text-gray-400 mt-1 break-all">
-                    URL: {previewPhoto}
-                  </p>
-                )}
+                <p className="text-xs text-gray-600 mt-1">
+                  Total de fotos a processar: {upload?.photos.length || 0}
+                </p>
               </div>
 
               {/* Configurações */}
