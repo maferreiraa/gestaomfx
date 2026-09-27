@@ -12,3 +12,9 @@ uploadRoutes.get('/:uploadId', (req, res) => uploadsController.getUpload(req, re
 uploadRoutes.post('/:uploadId/apply-watermark', (req, res) =>
   uploadsController.applyWatermark(req, res)
 )
+uploadRoutes.get('/:uploadId/selections', (req, res) =>
+  uploadsController.getUploadSelections(req, res)
+)
+uploadRoutes.post('/:uploadId/payments/:paymentId/release', (req, res) =>
+  uploadsController.releasePhotos(req, res)
+)

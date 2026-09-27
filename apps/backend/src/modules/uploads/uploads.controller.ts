@@ -418,6 +418,162 @@ export class UploadsController {
       ])
       .toBuffer()
   }
+
+  async getUploadSelections(req: Request, res: Response): Promise<void> {
+    const { uploadId } = req.params
+    const userId = req.userId
+
+    if (!userId) {
+      throw createError('Unauthorized', 401)
+    }
+
+    const upload = await prisma.upload.findFirst({
+      where: {
+        id: uploadId,
+        client: { userId },
+      },
+    })
+
+    if (!upload) {
+      throw createError('Upload not found', 404)
+    }
+
+    const payments = await prisma.payment.findMany({
+      where: { uploadId },
+      include: {
+        selections: {
+          include: {
+            photo: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    const formattedPayments = payments.map((payment) => ({
+      id: payment.id,
+      amount: payment.amount.toString(),
+      status: payment.status,
+      selectedPhotoCount: payment.selections.length,
+      selections: payment.selections.map((sel) => ({
+        id: sel.id,
+        photoId: sel.photo.id,
+        photoOrder: sel.photo.order,
+        url: sel.photo.urlWithWatermark,
+        urlWithoutWatermark: sel.photo.urlWithoutWatermark,
+      })),
+      createdAt: payment.createdAt,
+      completedAt: payment.completedAt,
+      expiresAt: payment.expiresAt,
+    }))
+
+    res.json({
+      success: true,
+      data: {
+        uploadId,
+        payments: formattedPayments,
+      },
+    })
+  }
+
+  async releasePhotos(req: Request, res: Response): Promise<void> {
+    const { uploadId, paymentId } = req.params
+    const userId = req.userId
+
+    if (!userId) {
+      throw createError('Unauthorized', 401)
+    }
+
+    const upload = await prisma.upload.findFirst({
+      where: {
+        id: uploadId,
+        client: { userId },
+      },
+    })
+
+    if (!upload) {
+      throw createError('Upload not found', 404)
+    }
+
+    const payment = await prisma.payment.findFirst({
+      where: {
+        id: paymentId,
+        uploadId,
+      },
+      include: {
+        selections: {
+          include: {
+            photo: true,
+          },
+        },
+      },
+    })
+
+    if (!payment) {
+      throw createError('Payment not found', 404)
+    }
+
+    if (payment.status !== 'COMPLETED') {
+      throw createError('Payment is not completed', 400)
+    }
+
+    const uploadDir = path.join(process.cwd(), 'uploads')
+    const processedPhotos: any[] = []
+
+    for (const selection of payment.selections) {
+      try {
+        const watermarkedUrl = selection.photo.urlWithWatermark
+        const watermarkedFilename = watermarkedUrl.split('/').pop()
+
+        if (!watermarkedFilename) continue
+
+        const watermarkedPath = path.join(uploadDir, watermarkedFilename)
+
+        if (!fs.existsSync(watermarkedPath)) {
+          throw new Error(`Photo not found: ${watermarkedFilename}`)
+        }
+
+        const imageBuffer = fs.readFileSync(watermarkedPath)
+
+        const withoutWatermarkFilename = `${uploadId}-clean-${selection.photo.order}-${Date.now()}.jpg`
+        const withoutWatermarkPath = path.join(
+          uploadDir,
+          withoutWatermarkFilename
+        )
+
+        const cleanedBuffer = await sharp(imageBuffer)
+          .rotate()
+          .toBuffer()
+
+        fs.writeFileSync(withoutWatermarkPath, cleanedBuffer)
+
+        const cleanUrl = `${env.API_URL}/uploads/${withoutWatermarkFilename}`
+
+        await prisma.photo.update({
+          where: { id: selection.photo.id },
+          data: {
+            urlWithoutWatermark: cleanUrl,
+          },
+        })
+
+        processedPhotos.push({
+          photoId: selection.photo.id,
+          cleanUrl,
+        })
+      } catch (error: any) {
+        console.error(`Error processing photo ${selection.photo.id}:`, error.message)
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        paymentId,
+        releasedPhotos: processedPhotos.length,
+        photos: processedPhotos,
+      },
+    })
+  }
 }
 
 export const uploadsController = new UploadsController()
