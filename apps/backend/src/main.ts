@@ -46,6 +46,25 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
+// Debug: List all gallery links (remove in production)
+app.get('/debug/galleries', async (req, res) => {
+  const galleries = await prisma.galleryLink.findMany({
+    include: { client: true, upload: { include: { photos: true } } },
+    take: 10,
+    orderBy: { createdAt: 'desc' },
+  })
+  res.json({
+    totalGalleries: galleries.length,
+    galleries: galleries.map(g => ({
+      token: g.token,
+      client: g.client.name,
+      photoCount: g.upload.photos.length,
+      expiresAt: g.expiresAt,
+      isExpired: new Date() > g.expiresAt,
+    })),
+  })
+})
+
 // Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/admin/clients', clientRoutes)
