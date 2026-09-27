@@ -210,6 +210,10 @@ export default function ConfigureWatermarkPage() {
                       src={previewPhoto}
                       alt="Preview"
                       className="w-full h-full object-contain"
+                      onError={(e) => {
+                        console.error('Failed to load preview:', previewPhoto)
+                        e.currentTarget.style.display = 'none'
+                      }}
                     />
                   ) : (
                     <p className="text-gray-500">Nenhuma foto para preview</p>
@@ -218,6 +222,11 @@ export default function ConfigureWatermarkPage() {
                 <p className="text-xs text-gray-500 mt-2">
                   Total de fotos: {upload?.photos.length || 0}
                 </p>
+                {previewPhoto && (
+                  <p className="text-xs text-gray-400 mt-1 break-all">
+                    URL: {previewPhoto}
+                  </p>
+                )}
               </div>
 
               {/* Configurações */}
