@@ -124,13 +124,13 @@ export default function NewUploadPage() {
       }
 
       const data = await response.json()
-      setSuccess(`Upload realizado com sucesso! URL: ${data.data.galleryUrl}`)
+      setSuccess('Upload realizado! Configurando preços...')
       setFiles([])
       setSelectedClient('')
 
       setTimeout(() => {
-        router.push('/dashboard/uploads')
-      }, 2000)
+        router.push(`/dashboard/uploads/${data.data.uploadId}/config`)
+      }, 1500)
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer upload')
     } finally {
