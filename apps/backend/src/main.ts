@@ -10,6 +10,7 @@ import { clientRoutes } from './modules/clients/clients.routes'
 import { uploadRoutes } from './modules/uploads/uploads.routes'
 import { settingsRoutes } from './modules/settings/settings.routes'
 import { galleryLinksRoutes } from './modules/gallery-links/gallery-links.routes'
+import { paymentRoutes } from './modules/payments/payments.routes'
 
 const app = express()
 
@@ -51,6 +52,7 @@ app.use('/api/admin/clients', clientRoutes)
 app.use('/api/admin/uploads', uploadRoutes)
 app.use('/api/settings', settingsRoutes)
 app.use('/api/galleries', galleryLinksRoutes)
+app.use('/api/payments', paymentRoutes)
 
 // Error handling
 app.use(errorHandler)

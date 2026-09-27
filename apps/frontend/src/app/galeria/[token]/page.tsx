@@ -25,6 +25,15 @@ interface GalleryData {
   expiresAt: string
 }
 
+interface PaymentData {
+  paymentId: string
+  amount: number
+  qrCode: string
+  qrCodeUrl: string
+  copyPasteKey: string
+  expiresAt: string
+}
+
 export default function GalleryPage() {
   const params = useParams()
   const token = params.token as string
@@ -34,6 +43,9 @@ export default function GalleryPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [totalPrice, setTotalPrice] = useState(0)
+  const [paymentData, setPaymentData] = useState<PaymentData | null>(null)
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false)
+  const [clientEmail, setClientEmail] = useState('')
 
   useEffect(() => {
     fetchGallery()
@@ -107,6 +119,50 @@ export default function GalleryPage() {
       newSelected.add(photoId)
     }
     setSelectedPhotos(newSelected)
+  }
+
+  const handleInitiatePayment = async () => {
+    if (!clientEmail.trim()) {
+      setError('Por favor, insira um email válido')
+      return
+    }
+
+    if (selectedPhotos.size === 0) {
+      setError('Selecione pelo menos uma foto')
+      return
+    }
+
+    try {
+      setIsPaymentLoading(true)
+      setError('')
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/payments`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            uploadId: gallery?.uploadId,
+            clientEmail,
+            photoIds: Array.from(selectedPhotos),
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Erro ao processar pagamento')
+      }
+
+      const data = await response.json()
+      setPaymentData(data.data)
+    } catch (err: any) {
+      setError(err.message || 'Erro ao processar pagamento')
+    } finally {
+      setIsPaymentLoading(false)
+    }
   }
 
   if (isLoading) {
@@ -216,6 +272,12 @@ export default function GalleryPage() {
                 </div>
               )}
 
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                  {error}
+                </div>
+              )}
+
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-gray-600">Total:</span>
@@ -225,6 +287,11 @@ export default function GalleryPage() {
                 </div>
 
                 <button
+                  onClick={() => {
+                    if (selectedPhotos.size > 0) {
+                      setPaymentData({ amount: 0, paymentId: '' } as any)
+                    }
+                  }}
                   disabled={selectedPhotos.size === 0}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
@@ -242,6 +309,132 @@ export default function GalleryPage() {
             </div>
           </div>
         </div>
+
+        {/* Payment Modal */}
+        {paymentData && paymentData.paymentId && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                Pagamento via PIX
+              </h2>
+
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  Escaneie o código QR abaixo ou copie a chave para pagar.
+                </p>
+              </div>
+
+              {paymentData.qrCode && (
+                <div className="mb-6 flex justify-center">
+                  <div className="bg-gray-100 p-4 rounded-lg">
+                    <img
+                      src={`data:image/png;base64,${paymentData.qrCode}`}
+                      alt="QR Code PIX"
+                      className="w-48 h-48"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {paymentData.copyPasteKey && (
+                <div className="mb-6">
+                  <p className="text-sm text-gray-600 mb-2">Chave PIX (Copia e Cola):</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={paymentData.copyPasteKey}
+                      readOnly
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                    />
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(paymentData.copyPasteKey)
+                      }}
+                      className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold"
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  <strong>⏰ Atenção:</strong> Este PIX expira em 30 minutos.
+                </p>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-2">Valor a pagar:</p>
+                <p className="text-2xl font-bold text-green-600">
+                  R$ {paymentData.amount.toFixed(2)}
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setPaymentData(null)
+                  setSelectedPhotos(new Set())
+                  setClientEmail('')
+                }}
+                className="w-full bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold py-2 rounded-lg transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Email Input Modal (before payment) */}
+        {paymentData && !paymentData.paymentId && selectedPhotos.size > 0 && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                Confirmar Compra
+              </h2>
+
+              <div className="mb-6">
+                <p className="text-gray-600 mb-4">
+                  Você está prestes a comprar{' '}
+                  <strong>{selectedPhotos.size} foto(s)</strong> por{' '}
+                  <strong>R$ {totalPrice.toFixed(2)}</strong>
+                </p>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Seu email
+                  </label>
+                  <input
+                    type="email"
+                    value={clientEmail}
+                    onChange={(e) => setClientEmail(e.target.value)}
+                    placeholder="seu.email@example.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={handleInitiatePayment}
+                disabled={isPaymentLoading || !clientEmail.trim()}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-2"
+              >
+                {isPaymentLoading ? 'Processando...' : 'Gerar PIX'}
+              </button>
+
+              <button
+                onClick={() => {
+                  setPaymentData(null)
+                  setClientEmail('')
+                }}
+                disabled={isPaymentLoading}
+                className="w-full bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold py-2 rounded-lg disabled:opacity-50 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
