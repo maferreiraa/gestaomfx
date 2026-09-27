@@ -60,6 +60,9 @@ export class UploadsController {
       include: {
         photos: true,
         client: true,
+        galleryLink: {
+          select: { token: true },
+        },
       },
     })
 
