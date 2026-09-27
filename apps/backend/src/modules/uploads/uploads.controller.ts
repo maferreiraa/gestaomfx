@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import * as fs from 'fs'
 import * as path from 'path'
+import sharp from 'sharp'
 import { prisma } from '../../config/database'
 import { env } from '../../config/env'
 import { createError } from '../../common/middleware/error-handler'
@@ -160,6 +161,262 @@ export class UploadsController {
         galleryUrl,
       },
     })
+  }
+
+  async applyWatermark(req: Request, res: Response): Promise<void> {
+    const { uploadId } = req.params
+    const userId = req.userId
+    const {
+      text = 'mfxcreativee',
+      opacity = 0.25,
+      fontSize = 60,
+      fontFamily = 'Arial',
+      color = '#FFFFFF',
+      repeatMode = 'diagonal',
+    } = req.body
+
+    if (!userId) {
+      throw createError('Unauthorized', 401)
+    }
+
+    const upload = await prisma.upload.findFirst({
+      where: {
+        id: uploadId,
+        client: { userId },
+      },
+      include: {
+        photos: {
+          orderBy: { order: 'asc' },
+        },
+      },
+    })
+
+    if (!upload) {
+      throw createError('Upload not found', 404)
+    }
+
+    if (upload.photos.length === 0) {
+      throw createError('No photos in this upload', 400)
+    }
+
+    const uploadDir = path.join(process.cwd(), 'uploads')
+    const watermarkedPhotos: any[] = []
+
+    for (const photo of upload.photos) {
+      try {
+        const currentUrl = photo.urlWithWatermark
+        const filename = currentUrl.split('/').pop()
+
+        if (!filename) continue
+
+        const originalPath = path.join(uploadDir, filename)
+
+        if (!fs.existsSync(originalPath)) {
+          throw new Error(`Original photo not found: ${filename}`)
+        }
+
+        const imageBuffer = fs.readFileSync(originalPath)
+        const image = sharp(imageBuffer)
+        const metadata = await image.metadata()
+
+        if (!metadata.width || !metadata.height) {
+          throw new Error(`Could not read image dimensions: ${filename}`)
+        }
+
+        let finalBuffer: Buffer
+
+        if (repeatMode === 'single') {
+          finalBuffer = await this.applySingleWatermark(
+            imageBuffer,
+            metadata.width,
+            metadata.height,
+            text,
+            opacity,
+            fontSize,
+            color
+          )
+        } else if (repeatMode === 'diagonal') {
+          finalBuffer = await this.applyDiagonalWatermark(
+            imageBuffer,
+            metadata.width,
+            metadata.height,
+            text,
+            opacity,
+            fontSize,
+            color
+          )
+        } else {
+          finalBuffer = await this.applyScatteredWatermark(
+            imageBuffer,
+            metadata.width,
+            metadata.height,
+            text,
+            opacity,
+            fontSize,
+            color
+          )
+        }
+
+        const watermarkedFilename = `${uploadId}-watermarked-${photo.order}-${Date.now()}.jpg`
+        const watermarkedPath = path.join(uploadDir, watermarkedFilename)
+
+        fs.writeFileSync(watermarkedPath, finalBuffer)
+
+        const watermarkedUrl = `${env.API_URL}/uploads/${watermarkedFilename}`
+
+        await prisma.photo.update({
+          where: { id: photo.id },
+          data: {
+            urlWithWatermark: watermarkedUrl,
+          },
+        })
+
+        watermarkedPhotos.push({
+          photoId: photo.id,
+          order: photo.order,
+          url: watermarkedUrl,
+        })
+      } catch (error: any) {
+        console.error(`Error processing photo ${photo.id}:`, error.message)
+        throw createError(`Failed to process photo: ${error.message}`, 500)
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        uploadId: upload.id,
+        processedPhotos: watermarkedPhotos.length,
+        photos: watermarkedPhotos,
+      },
+    })
+  }
+
+  private async applySingleWatermark(
+    imageBuffer: Buffer,
+    width: number,
+    height: number,
+    text: string,
+    opacity: number,
+    fontSize: number,
+    color: string
+  ): Promise<Buffer> {
+    const watermarkSvg = Buffer.from(`
+      <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+        <text
+          x="${width / 2}"
+          y="${height / 2}"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          font-size="${fontSize}"
+          font-family="Arial"
+          fill="${color}"
+          opacity="${opacity}"
+          font-weight="bold"
+        >${text}</text>
+      </svg>
+    `)
+
+    return sharp(imageBuffer)
+      .composite([
+        {
+          input: watermarkSvg,
+          blend: 'overlay',
+        },
+      ])
+      .toBuffer()
+  }
+
+  private async applyDiagonalWatermark(
+    imageBuffer: Buffer,
+    width: number,
+    height: number,
+    text: string,
+    opacity: number,
+    fontSize: number,
+    color: string
+  ): Promise<Buffer> {
+    const diagonal = Math.sqrt(width * width + height * height)
+    const textElements: string[] = []
+
+    for (let i = -2; i < 3; i++) {
+      textElements.push(`
+        <text
+          x="${i * diagonal}"
+          y="0"
+          font-size="${fontSize}"
+          font-family="Arial"
+          fill="${color}"
+          opacity="${opacity}"
+          font-weight="bold"
+        >${text}</text>
+      `)
+    }
+
+    const watermarkSvg = Buffer.from(`
+      <svg width="${diagonal * 3}" height="${diagonal}" xmlns="http://www.w3.org/2000/svg">
+        <g transform="rotate(45)">
+          ${textElements.join('\n')}
+        </g>
+      </svg>
+    `)
+
+    return sharp(imageBuffer)
+      .composite([
+        {
+          input: watermarkSvg,
+          blend: 'overlay',
+        },
+      ])
+      .toBuffer()
+  }
+
+  private async applyScatteredWatermark(
+    imageBuffer: Buffer,
+    width: number,
+    height: number,
+    text: string,
+    opacity: number,
+    fontSize: number,
+    color: string
+  ): Promise<Buffer> {
+    const textElements: string[] = []
+    const cols = Math.ceil(width / (fontSize * 4))
+    const rows = Math.ceil(height / (fontSize * 2))
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const x = col * fontSize * 4 + (Math.random() * fontSize)
+        const y = row * fontSize * 2 + (Math.random() * fontSize)
+
+        textElements.push(`
+          <text
+            x="${x}"
+            y="${y}"
+            font-size="${fontSize}"
+            font-family="Arial"
+            fill="${color}"
+            opacity="${opacity * 0.7}"
+            font-weight="bold"
+          >${text}</text>
+        `)
+      }
+    }
+
+    const watermarkSvg = Buffer.from(`
+      <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+        ${textElements.join('\n')}
+      </svg>
+    `)
+
+    return sharp(imageBuffer)
+      .composite([
+        {
+          input: watermarkSvg,
+          blend: 'overlay',
+        },
+      ])
+      .toBuffer()
   }
 }
 

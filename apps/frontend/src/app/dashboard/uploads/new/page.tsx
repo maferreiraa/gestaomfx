@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/store/auth.store'
 import Link from 'next/link'
@@ -16,7 +16,7 @@ interface UploadPreview {
   id: string
 }
 
-export default function NewUploadPage() {
+function NewUploadContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const clientIdParam = searchParams.get('clientId')
@@ -274,5 +274,13 @@ export default function NewUploadPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function NewUploadPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-mfx-dark to-mfx-dark flex items-center justify-center"><p className="text-white">Carregando...</p></div>}>
+      <NewUploadContent />
+    </Suspense>
   )
 }

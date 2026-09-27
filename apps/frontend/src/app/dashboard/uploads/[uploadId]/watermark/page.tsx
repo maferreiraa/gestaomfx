@@ -114,8 +114,23 @@ export default function ConfigureWatermarkPage() {
   const handleSave = async () => {
     try {
       setIsSaving(true)
-      // TODO: Create endpoint to apply watermark to photos
-      // For now, just show success and continue
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/uploads/${uploadId}/apply-watermark`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(watermark),
+        }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Erro ao aplicar marca d\'água')
+      }
+
       setSuccess('Marca d\'água aplicada com sucesso!')
       setTimeout(() => {
         router.push(`/dashboard/uploads/${uploadId}`)
