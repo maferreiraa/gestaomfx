@@ -162,9 +162,12 @@ export default function ClientesPage() {
                         {new Date(client.createdAt).toLocaleDateString('pt-BR')}
                       </td>
                       <td className="py-3 px-4">
-                        <button className="text-mfx-orange hover:text-mfx-coral font-semibold">
+                        <Link
+                          href={`/dashboard/clientes/${client.id}`}
+                          className="text-mfx-orange hover:text-mfx-coral font-semibold"
+                        >
                           Ver →
-                        </button>
+                        </Link>
                       </td>
                     </tr>
                   ))}

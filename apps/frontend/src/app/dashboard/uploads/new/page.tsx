@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/store/auth.store'
 import Link from 'next/link'
 
@@ -18,9 +18,11 @@ interface UploadPreview {
 
 export default function NewUploadPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const clientIdParam = searchParams.get('clientId')
   const { isAuthenticated, logout, accessToken } = useAuthStore()
   const [clients, setClients] = useState<Client[]>([])
-  const [selectedClient, setSelectedClient] = useState('')
+  const [selectedClient, setSelectedClient] = useState(clientIdParam || '')
   const [files, setFiles] = useState<UploadPreview[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
