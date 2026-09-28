@@ -72,6 +72,7 @@ model Upload {
 
   photos        Photo[]
   selections    PhotoSelection[]
+  payments      Payment[]
 
   @@index([clientId])
   @@index([uploadedAt])
@@ -141,6 +142,7 @@ model Payment {
   client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   uploadId    String
+  upload      Upload    @relation(fields: [uploadId], references: [id], onDelete: Cascade)
 
   amount      Decimal   @db.Decimal(10, 2)
   currency    String    @default("BRL")
@@ -156,6 +158,7 @@ model Payment {
   expiresAt   DateTime  // PIX expira em 30 minutos
 
   @@index([clientId])
+  @@index([uploadId])
   @@index([status])
   @@index([createdAt])
   @@map("payments")
@@ -193,7 +196,7 @@ model GalleryLink {
 model PriceConfig {
   id              String    @id @default(cuid())
   uploadId        String    @unique
-  upload          Upload    @relation("UploadPriceConfig", fields: [uploadId], references: [id], onDelete: Cascade)
+  upload          Upload    @relation("UploadPriceConfig", fields: [uploadId], references: [id])
 
   price1Photo     Decimal   @db.Decimal(10, 2)
   price3Photos    Decimal   @db.Decimal(10, 2)
